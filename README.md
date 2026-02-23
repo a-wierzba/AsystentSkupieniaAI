@@ -27,4 +27,4 @@ Projekt w ramach szkolenia dla nauczycielek i nauczycieli Lekcja: AI. Aplikacja 
    ```
 
 ## Autor
-Projekcik przygotowany przez: **[Andrzej W.]**
+Projekt przygotowany przez: [Andrzej W.](https://github.com/a-wierzba)
