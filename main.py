@@ -26,6 +26,10 @@ HEAD_POSE_BIN = os.path.join(MODEL_DIR, "head-pose-estimation-adas-0001", "FP32"
 
 EMOTION_LABELS = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
 
+# --- MASZYNA STANÓW: CZASY FAZ ---
+CZAS_KALIBRACJI = 30       # Faza 1: max 30 sekund
+CZAS_SESJI = 5 * 60        # Faza 2: 5 minut sesji właściwej
+
 
 def download_models_if_missing():
     """Sprawdza obecność plików .xml i .bin w intel/<model>/FP32/. Jeśli brakuje — pobiera z Open Model Zoo."""
@@ -97,7 +101,12 @@ def main():
     if not cap.isOpened():
         print("Błąd: nie można otworzyć kamery (indeks 0).")
         return
-    print("Start! Naciśnij 'q' aby zakończyć i zobaczyć wykres.")
+    print("Start! Faza 1: przygotuj się i naciśnij 'S', potem 5 min sesji, na końcu 'R' = raport.")
+
+    global start_czas
+    faza = 1
+    czas_start_fazy_1 = time.time()
+    czas_start_sesji = None
 
     while True:
         ret, frame = cap.read()
@@ -152,8 +161,10 @@ def main():
                 emocja = stabilizuj_emocje(nowa_emocja, historia_emocji)
 
                 status_tekst, punktacja = ocen_skupienie(yaw, pitch, emocja)
-                raport_skupienia.append(punktacja)
-                czasy_pomiarow.append(time.time() - start_czas)
+                # Zapis do raportu tylko w Fazie 2 (sesja właściwa)
+                if faza == 2:
+                    raport_skupienia.append(punktacja)
+                    czasy_pomiarow.append(time.time() - start_czas)
 
                 color = (0, 255, 0) if punktacja == 1 else (0, 0, 255)
                 cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
@@ -161,13 +172,45 @@ def main():
                 cv2.putText(frame, f"Yaw: {int(yaw)} Pitch: {int(pitch)} Emocja: {emocja}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
         if not twarz_wykryta:
-            raport_skupienia.append(0)
-            czasy_pomiarow.append(time.time() - start_czas)
-            cv2.putText(frame, "BRAK UCZNIA!", (10, h // 2), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            if faza == 2:
+                raport_skupienia.append(0)
+                czasy_pomiarow.append(time.time() - start_czas)
+            if faza != 2:
+                cv2.putText(frame, "BRAK UCZNIA!", (10, h // 2), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-        cv2.imshow("Cyfrowy Trener Skupienia", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # --- Faza 1: Podgląd i Kalibracja (max 30 s) ---
+        if faza == 1:
+            cv2.putText(frame, "Przygotuj sie! Nacisnij S, aby zaczac (lub poczekaj 30s)", (20, h // 2 - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
+            cv2.imshow("Cyfrowy Trener Skupienia", frame)
+            klawisz = cv2.waitKey(1) & 0xFF
+            if klawisz == ord('s') or klawisz == ord('S') or (time.time() - czas_start_fazy_1) >= CZAS_KALIBRACJI:
+                raport_skupienia.clear()
+                czasy_pomiarow.clear()
+                historia_yaw.clear()
+                historia_pitch.clear()
+                historia_emocji.clear()
+                start_czas = time.time()
+                faza = 2
+                czas_start_sesji = time.time()
+                cv2.destroyAllWindows()
+            continue
+
+        # --- Faza 2: Sesja w tle (5 min, bez okna) ---
+        if faza == 2:
+            if (time.time() - czas_start_sesji) >= CZAS_SESJI:
+                faza = 3
+            cv2.waitKey(1)
+            continue
+
+        # --- Faza 3: Zakończenie i Raport ---
+        if faza == 3:
+            cv2.putText(frame, "KONIEC SESJI! Nacisnij R, aby wygenerowac Raport", (20, h // 2 - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            cv2.imshow("Cyfrowy Trener Skupienia", frame)
+            klawisz = cv2.waitKey(1) & 0xFF
+            if klawisz == ord('r') or klawisz == ord('R'):
+                break
 
     cap.release()
     cv2.destroyAllWindows()
