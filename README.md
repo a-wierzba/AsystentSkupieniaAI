@@ -26,4 +26,5 @@ Projekt w ramach szkolenia dla nauczycielek i nauczycieli Lekcja: AI. Aplikacja 
    python main.py
    ```
 
-## AndrzejW
+## Autor
+Projekcik przygotowany przez: **[Andrzej W.]**
