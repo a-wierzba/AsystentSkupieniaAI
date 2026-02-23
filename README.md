@@ -26,5 +26,15 @@ Projekt w ramach szkolenia dla nauczycielek i nauczycieli Lekcja: AI. Aplikacja 
    python main.py
    ```
 
+## Jak działa sesja skupienia?
+
+1. **Faza Kalibracji (30 sek)** — Uczeń przygotowuje stanowisko. Na ekranie widać podgląd z kamery i ramki AI. Można zacząć wcześniej, naciskając klawisz **S**.
+
+2. **Faza Pracy (5 min)** — Okno kamery znika, aby nie rozpraszać ucznia. AI pracuje w tle, analizując skupienie (kąt nachylenia głowy i emocje) oraz zbierając dane do raportu.
+
+3. **Faza Raportu** — Po 5 minutach okno powraca z komunikatem o końcu sesji. Naciśnięcie klawisza **R** generuje interaktywny wykres „Raport Uważności”.
+
+Projekt idealnie nadaje się do przeprowadzenia szybkich, 5‑minutowych sesji testowych podczas lekcji o AI.
+
 ## Autor
 Projekt przygotowany przez: [Andrzej W.](https://github.com/a-wierzba)
